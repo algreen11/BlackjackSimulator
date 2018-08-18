@@ -1,10 +1,10 @@
 import random
 
 def shuffleDeck():  # d - diamonds, h - hearts, s - spades, c - clubs
-    deck = [[1, 'd'], [2, 'd'], [3, 'd'], [4, 'd'], [5, 'd'], [6, 'd'], [7, 'd'], [8, 'd'], [9, 'd'], [10, 'd'], [11, 'd'], [12, 'd'], [13, 'd'],
-            [1, 'h'], [2, 'h'], [3, 'h'], [4, 'h'], [5, 'h'], [6, 'h'], [7, 'h'], [8, 'h'], [9, 'h'], [10, 'h'], [11, 'h'], [12, 'h'], [13, 'h'],
-            [1, 's'], [2, 's'], [3, 's'], [4, 's'], [5, 's'], [6, 's'], [7, 's'], [8, 's'], [9, 's'], [10, 's'], [11, 's'], [12, 's'], [13, 's'],
-            [1, 'c'], [2, 'c'], [3, 'c'], [4, 'c'], [5, 'c'], [6, 'c'], [7, 'c'], [8, 'c'], [9, 'c'], [10, 'c'], [11, 'c'], [12, 'c'], [13, 'c'],
+    deck = [[2, 'd'], [3, 'd'], [4, 'd'], [5, 'd'], [6, 'd'], [7, 'd'], [8, 'd'], [9, 'd'], [10, 'd'], [11, 'd'], [12, 'd'], [13, 'd'], [14, 'd'], 
+            [2, 'h'], [3, 'h'], [4, 'h'], [5, 'h'], [6, 'h'], [7, 'h'], [8, 'h'], [9, 'h'], [10, 'h'], [11, 'h'], [12, 'h'], [13, 'h'], [14, 'h'],
+            [2, 's'], [3, 's'], [4, 's'], [5, 's'], [6, 's'], [7, 's'], [8, 's'], [9, 's'], [10, 's'], [11, 's'], [12, 's'], [13, 's'], [14, 's'],
+            [2, 'c'], [3, 'c'], [4, 'c'], [5, 'c'], [6, 'c'], [7, 'c'], [8, 'c'], [9, 'c'], [10, 'c'], [11, 'c'], [12, 'c'], [13, 'c'], [14, 'c'],
             ]
 
     shuffled = deck * 6
@@ -29,8 +29,8 @@ def playHand(deck):
         if total(userHand) < 22:
             hitOrStick(deck, dealerHand)
 
-    # print(total(userHand)), print(userHand)
-    # print(total(dealerHand)), print(dealerHand)
+    print("user hand:", total(userHand), userHand)
+    print("dealer hand:", total(dealerHand), dealerHand)
 
     user = total(userHand)
     dealer = total(dealerHand)
@@ -45,6 +45,7 @@ def playHand(deck):
         #winnings -= 1
     else:
         draws += 1
+    print(winnings, draws)
     return winnings, draws
 
 
@@ -61,9 +62,9 @@ def total(hand):
     isAce = False 
     for x in hand:
         num = x[0]
-        if num > 10 and num < 13:
+        if num > 10 and num < 14:
             num = 10
-        elif num == 13:
+        elif num == 14:
             if tot <= 10: 
                 num = 11
                 isAce = True
@@ -74,9 +75,9 @@ def total(hand):
         tot = 0
         for x in hand:
             num = x[0]
-            if num > 10 and num < 13:
+            if num > 10 and num < 14:
                 num = 10
-            elif num == 13:
+            elif num == 14:
                 num = 1
             tot += num
     return tot
@@ -85,7 +86,7 @@ def blackJack():
     winnings = 0
     draws = 0
     hands = 0
-    while hands < 100000:
+    while hands < 10000:
         deck = shuffleDeck()
 
         while len(deck) > 78:  # 75% of deck played
