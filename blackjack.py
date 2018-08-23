@@ -2,6 +2,7 @@ import random
 import numpy as np
 import pandas as pd
 
+# hard total matrix, top column is dealer card, rows denoted by total of user hand
 data = np.array([['', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14'],
                 ['4', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                 ['5', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -20,6 +21,23 @@ hardTotal = pd.DataFrame(data=data[1:, 1:],
                    index=data[1:, 0],
                    columns=data[0, 1:])
 
+# soft total matrix 
+data = np.array([['', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14'],
+                ['12', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # remove this line when add split logic
+                ['13', 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1],
+                ['14', 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1],
+                ['15', 1, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1],
+                ['16', 1, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1],
+                ['17', 1, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1],
+                ['18', 0, 2, 2, 2, 2, 0, 0, 1, 1, 1, 1, 1, 1],
+                ['19', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                ['20', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                ['21', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
+softTotal = pd.DataFrame(data=data[1:, 1:],
+                   index=data[1:, 0],
+                   columns=data[0, 1:])
+
+
 
 def shuffleDeck():  # d - diamonds, h - hearts, s - spades, c - clubs
     deck = [[2, 'd'], [3, 'd'], [4, 'd'], [5, 'd'], [6, 'd'], [7, 'd'], [8, 'd'], [9, 'd'], [10, 'd'], [11, 'd'], [12, 'd'], [13, 'd'], [14, 'd'], 
@@ -36,8 +54,7 @@ def shuffleDeck():  # d - diamonds, h - hearts, s - spades, c - clubs
 
 
 def playHand(deck):
-    winnings = 0
-    draws = 0
+
     dealerHand = []
     userHand = []
     doubledDown = False 
@@ -53,34 +70,44 @@ def playHand(deck):
     if not ((total(userHand) == 21 and total(dealerHand) != 21) or (total(userHand) != 21 and total(dealerHand) == 21)):
         doubledDown = hitOrStickPlayer(deck, userHand, dealerHand[1])
         if total(userHand) < 22:
-            hitOrStick(deck, dealerHand)
+            hitOrStickDealer(deck, dealerHand)
 
     # print("user hand:", total(userHand), userHand)
     # print("dealer hand:", total(dealerHand), dealerHand)
     # print(doubledDown)
 
+    return scoreHand(userHand, dealerHand, doubledDown)
+
+def scoreHand(userHand, dealerHand, doubledDown):
+    winnings = 0
+    draws = 0
+    losses = 0
+
     user = total(userHand)
     dealer = total(dealerHand)
 
     if user > 21:
-        None
+        losses = 1
     elif user > dealer or dealer > 21:
-        winnings += 1
+        if len(userHand) == 2 and user == 21:  # blackjack
+            winnings += 1.5
+        else:
+            winnings += 1
     elif dealer > user:
-        None
+        losses = 1
     else:
         draws += 1
     
     if doubledDown is True and draws < 1:
         if winnings == 0:
-            winnings = -1
+            losses = 2
         else:
             winnings = 2
-    #print(winnings, draws)
-    return winnings, draws
+    #print(winnings, draws, losses)
+    return winnings, draws, losses
 
 
-def hitOrStick(deck, hand):
+def hitOrStickDealer(deck, hand):
     tot = total(hand)
     while tot < 17 and not tot > 22:
         card = deck.pop()
@@ -97,19 +124,22 @@ def hitOrStickPlayer(deck, hand, dealerCard):
             card = deck.pop()
             hand.append(card)
             tot = total(hand)
+        elif move == 2:
+            return True
         else:
-            if move == 2:
-                return True
-            else:
-                return False
+            return False
 
 
 def hitLogic(deck, hand, total, dealerCard):
-    if total > 16: 
+    soft = [card for card in hand if card[0] == 14]
+    if total > 16 and not (len(hand) == 2 and len(soft) > 0): 
         return 0 
-    else: 
-        move = int(hardTotal.loc[str(total)][str(dealerCard[0])])
-        #print(hardTotal.loc[str(total)][str(dealerCard[0])])
+    else:
+        if len(hand) == 2 and len(soft) > 0:  # have a soft total
+            move = int(softTotal.loc[str(total)][str(dealerCard[0])])
+        else:
+            move = int(hardTotal.loc[str(total)][str(dealerCard[0])])
+
         if move == 1:  # hit
             return 1
         elif move == 2:  # doubledown
@@ -121,7 +151,6 @@ def hitLogic(deck, hand, total, dealerCard):
                 return 1 
         else:  # stand
             return 0
-
 
 
 def total(hand):
@@ -152,19 +181,20 @@ def total(hand):
 def blackJack():
     winnings = 0
     draws = 0
+    losses = 0
     hands = 0
-    while hands < 10000:
+    while hands < 100000:
         deck = shuffleDeck()
 
         while len(deck) > 78:  # 75% of deck played
-            win, draw = playHand(deck)
+            win, draw, loss = playHand(deck)
             winnings += win
             draws += draw
             hands += 1
-
-    print(winnings, draws, hands)
+            losses += loss
+    print(winnings,losses,draws,hands)
     print("Win %:", float(winnings/hands) * 100)
-    print("Loss %:", float((hands-winnings-draws)/hands) * 100)
+    print("Loss %:", float(losses/hands) * 100)
     print("Draw %:", float(draws/hands) * 100)
 
 if __name__ == '__main__':
