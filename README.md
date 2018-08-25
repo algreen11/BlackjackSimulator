@@ -9,6 +9,6 @@ To Do:
 
 3. Implement soft total logic X
 
-4. Implement split logic
+4. Implement split logic X
 
 5. Implement card counting 
