@@ -2,6 +2,8 @@ import random
 import numpy as np
 import pandas as pd
 
+# matrices that show moves based on cards: 0 = stick, 1 = hit, 2 = doubledown, 3 = split
+
 # hard total matrix, top column is dealer card, rows denoted by total of user hand
 data = np.array([['', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14'],
                 ['4', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -52,6 +54,9 @@ split = pd.DataFrame(data=data[1:, 1:],
                    index=data[1:, 0],
                    columns=data[0, 1:])
 
+# Card count in BlackJack - keep count of high/low cards seen
+count = 0
+
 
 
 def shuffleDeck():  # d - diamonds, h - hearts, s - spades, c - clubs
@@ -75,24 +80,29 @@ def playHand(deck):
     doubledDown = False
     split = False
 
+    #print("Count is:", getCount())
+    bet = placeBet()
+
     # give cards to player and dealer
     for x in range(4):
+        card = deck.pop()
+        changeCount(card)
         if x % 2 == 0:
-            userHand.append(deck.pop())
+            userHand.append(card)
         else:
-            dealerHand.append(deck.pop())
+            dealerHand.append(card)
 
-    # hit or stick for both player and dealer, don't do anything if either has 21
-    if not ((total(userHand) == 21 and total(dealerHand) != 21) or (total(userHand) != 21 and total(dealerHand) == 21)):
+    # hit or stick for both player and dealer, don't do anything with blackjack
+    if not ((total(userHand) == 21 and total(dealerHand) != 21)):
         doubledDown, split = hitOrStickPlayer(deck, userHand, dealerHand[1])
-        if total(userHand) < 22 and split is False:  # if split don't deal to player yet
+        if total(userHand) < 22 and split is False :  # if split don't deal to dealer yet
             hitOrStickDealer(deck, dealerHand)
 
     # print("user hand:", total(userHand), userHand)
     # print("dealer hand:", total(dealerHand), dealerHand)
     # print(doubledDown, split)
     if split is False:
-        return scoreHand(userHand, dealerHand, doubledDown)
+        return scoreHand(userHand, dealerHand, doubledDown, bet)
     else:
         winnings, losses, draws = 0, 0, 0
         hands = []
@@ -108,11 +118,8 @@ def playHand(deck):
                 hands.append([hand, doubledDown])
 
         hitOrStickDealer(deck, dealerHand)
-        # if len(hands) > 2:
-        #     print("user hands:", hands)
-        #     print("dealerHand:", dealerHand)
         for hand in hands:
-            w, d, l = scoreHand(hand[0], dealerHand, hand[1])
+            w, d, l = scoreHand(hand[0], dealerHand, hand[1], bet)
             if w == 1.5: w = 1  # don't get blackjack bonus after splitting
             winnings += w
             losses += l
@@ -120,7 +127,7 @@ def playHand(deck):
 
         return winnings, draws, losses
 
-def scoreHand(userHand, dealerHand, doubledDown):
+def scoreHand(userHand, dealerHand, doubledDown, bet):
     winnings = 0
     draws = 0
     losses = 0
@@ -146,13 +153,14 @@ def scoreHand(userHand, dealerHand, doubledDown):
         else:
             winnings = 2
 
-    return winnings, draws, losses
+    return winnings*bet, draws*bet, losses*bet
 
 
 def hitOrStickDealer(deck, hand):
     tot = total(hand)
     while tot < 17 and not tot > 22:
         card = deck.pop()
+        changeCount(card)
         hand.append(card)
         tot = total(hand)
 
@@ -164,6 +172,7 @@ def hitOrStickPlayer(deck, hand, dealerCard):
         move = hitLogic(deck, hand, tot, dealerCard)
         if move == 1:
             card = deck.pop()
+            changeCount(card)
             hand.append(card)
             tot = total(hand)
         elif move == 2:
@@ -172,6 +181,25 @@ def hitOrStickPlayer(deck, hand, dealerCard):
             return False, True
         else:
             return False, False
+
+
+def changeCount(card):
+    global count
+    if card[0] < 7:
+        count -= 1
+    elif card[0] > 9:
+        count += 1
+    #print(count)
+
+
+def getCount():
+    global count
+    return count
+
+def placeBet():
+	trueCount = int(getCount()/ 6)
+	#print("truecount is:", trueCount, "placing bet of: ", max(5, 5 + 5*trueCount))
+	return max(5, 5 + 5*trueCount)
 
 
 def hitLogic(deck, hand, total, dealerCard):
@@ -234,7 +262,7 @@ def blackJack():
     draws = 0
     losses = 0
     hands = 0
-    while hands < 100000:
+    while hands < 1000000:
         deck = shuffleDeck()
 
         while len(deck) > 78:  # 75% of deck played
@@ -243,10 +271,12 @@ def blackJack():
             draws += draw
             hands += 1
             losses += loss
+            #print(winnings, draws, losses)
     print(winnings,losses,draws,hands)
-    print("Win %:", float(winnings/hands) * 100)
-    print("Loss %:", float(losses/hands) * 100)
-    print("Draw %:", float(draws/hands) * 100)
+    # print("Win %:", float(winnings/(hands*5)) * 100)
+    # print("Loss %:", float(losses/(hands*5)) * 100)
+    # print("Draw %:", float(draws/(hands*5)) * 100)
+    print("Won $%d and lost $%d over %d hands for percentage winnings of %f" % (winnings, losses, hands, float(winnings-losses)/hands))
 
 if __name__ == '__main__':
     blackJack()

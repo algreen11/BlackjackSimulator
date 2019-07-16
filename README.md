@@ -11,4 +11,4 @@ To Do:
 
 4. Implement split logic X
 
-5. Implement card counting 
+5. Implement card counting X
