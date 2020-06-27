@@ -200,8 +200,8 @@ class BlackjackSim:
         return self.count
 
     def place_bet(self):
-        trueCount = int(self.get_count() / 6)
-        return max(5, 5 + 5 * trueCount)
+        true_count = int(self.get_count() / 6)
+        return max(5, 5 + 5 * true_count)
 
     def hit_logic(self, deck, hand, total, dealer_card):
         soft = [card for card in hand if card[0] == 14]
