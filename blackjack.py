@@ -88,6 +88,15 @@ class BlackjackSim:
 
         bet = self.place_bet()
 
+        # if count is negative don't bet, but simulate other 
+        # cards being played to keep count moving
+        if (bet == 0):
+            for x in range(random.randint(4, 10)):
+                card = deck.pop()
+                self.change_count(card)
+            return 0, 0, 0
+
+
         # give cards to player and dealer
         for x in range(4):
             card = deck.pop()
@@ -102,13 +111,13 @@ class BlackjackSim:
         if not ((self.total(user_hand) == 21 and self.total(dealer_hand) != 21)):
             doubled_down, split = self.hit_or_stick_player(
                 deck, user_hand, dealer_hand[1])
-            # if split don't deal to dealer yet
+            # if split or bust don't deal to dealer
             if self.total(user_hand) < 22 and split is False:
                 self.hit_or_stick_dealer(deck, dealer_hand)
 
         if split is False:
             return self.score_hand(user_hand, dealer_hand, doubled_down, bet)
-        else:
+        else: # play out split hands
             winnings, losses, draws = 0, 0, 0
             hands = []
             for card in user_hand:
@@ -163,7 +172,7 @@ class BlackjackSim:
             else:
                 winnings = 2
 
-        return winnings * bet, draws * bet, losses * bet
+        return winnings * bet, draws, losses * bet
 
     def hit_or_stick_dealer(self, deck, hand):
         tot = self.total(hand)
@@ -196,12 +205,9 @@ class BlackjackSim:
         elif card[0] > 9:
             self.count += 1
 
-    def get_count(self):
-        return self.count
-
     def place_bet(self):
-        true_count = int(self.get_count() / 6)
-        return max(5, 5 + 5 * true_count)
+        true_count = int(self.count / 6)
+        return max(0, 5 + 5 * true_count)
 
     def hit_logic(self, deck, hand, total, dealer_card):
         soft = [card for card in hand if card[0] == 14]
@@ -218,6 +224,7 @@ class BlackjackSim:
             return 0
         else:  # hard total
             move = int(hard_total.loc[str(total)][str(dealer_card[0])])
+
 
         if move == 1:  # hit
             return 1
@@ -264,6 +271,7 @@ class BlackjackSim:
         losses = 0
         hands = 0
         while hands < 100000:
+            self.count = 0
             deck = self.shuffle_deck()
 
             while len(deck) > 78:  # 75% of deck played
@@ -302,3 +310,4 @@ if __name__ == '__main__':
 
     print("Won $%d and lost $%d over %d hands for percentage winnings of %f" %
           (winnings, losses, hands, float(winnings - losses) / hands))
+    print("Had %d draws over %d hands as well" % (draws, hands))
